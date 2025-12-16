@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>codeX: The Journey of a Program</title>
+  <link rel="icon" href="assets/logo.png" type="image/x-icon">
+  <link rel="stylesheet" href="styles/fact.css" />
+</head>
+<body>
+
+  <!-- Navbar -->
+  <header class="Demo_web">
+    <div class="container">
+      <div class="logo">
+        <a href="index.html">
+          <img src="assets/logo.png" alt="codeX Logo" />
+        </a>
+      </div>
+      <nav class="menu">
+        <ul>
+          <li>
+            <a href="index.html">
+              <img src="assets/icons/smart-home.png" alt="Home Icon" class="icon-img" />
+              Home
+            </a>
+          </li>
+          <li>
+            <a href="about.html">
+              <img src="assets/icons/about.png" alt="About Icon" class="icon-img" />
+              About
+            </a>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Shared Background Wrapper -->
+  <div class="home-bg">
+
+    <!-- Hero Section -->
+    <section class="compiler">
+      <p>Left Factoring</p>
+    </section>
+
+    <!-- Grammar Tool (Input / Process / Output) -->
+    <section id="grammar-tool" class="tool-wrap">
+      <div class="tool-container">
+
+        <!-- Input card -->
+        <div class="io-card">
+          <h2 class="io-title">Input</h2>
+          <textarea id="grammarInput" class="io-textarea"
+            placeholder="Enter your grammar here..." spellcheck="false"
+            aria-label="Grammar input"></textarea>
+        </div>
+
+        <!-- Compile button BETWEEN the cards (matches page-1) -->
+        <button id="processBtn" class="btn-primary" type="button">Compile</button>
+
+        <!-- Output card -->
+        <div class="io-card">
+          <h2 class="io-title">Output</h2>
+          <textarea id="grammarOutput" class="io-textarea output" readonly
+            placeholder="Output will be displayed here…" aria-label="Output"></textarea>
+        </div>
+
+      </div>
+    </section>
+  </div> <!-- CLOSE .home-bg -->
+    <!-- Cards Section -->
+    <section class="card_part">
+      
+      <div class="d_flex">
+        
+ <div class="card_item">
+          <div class="card_item_img">
+            <img src="assets/lr.png" alt="Left Recursion" />
+          </div>
+          <h4>Left Recursion Elimination</h4>
+          <p>
+            Removes left-recursive rules in grammar to prevent infinite loops in
+            top-down parsing.
+          </p>
+          <a href="recursion.html">Compile</a>
+        </div>
+        
+
+        <div class="card_item">
+          <div class="card_item_img">
+            <img src="assets/first.png" alt="First Logo" />
+          </div>
+          <h4>First ( ) Follow ( )</h4>
+          <p>
+           FIRST(A): terminals that begin derivations from A; FOLLOW(A): terminals appearing right after A.
+          </p>
+          <a href="ff.html">Compile</a>
+        </div>
+
+        <div class="card_item">
+          <div class="card_item_img">
+            <img src="assets/lr0.png" alt="lr0 logo" />
+          </div>
+          <h4>LR ( 0 )</h4>
+          <p>
+            LR(0): bottom-up parser using LR items without lookahead to decide grammar reductions.
+          </p>
+          <a href="lr0.html">Compile</a>
+        </div>
+      </div>
+    </section>
+
+  </div> <!-- /.home-bg -->
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer_container">
+      <p>|| © 2025 || codeX || All rights reserved ||</p>
+    </div>
+  </footer>
+
+  <!-- Minimal JS hook for the tool -->
+  <script>
+    function parseGrammarFromText(inputText) {
+      const grammar = {};
+      const lines = inputText.trim().split("\n");
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (trimmed === "@") break;
+        if (!trimmed.includes("->")) continue;
+        const [lhs, rhs] = trimmed.split("->").map(s => s.trim());
+        if (!grammar[lhs]) grammar[lhs] = [];
+        const rhsList = rhs.split("|").map(s => s.trim());
+        grammar[lhs].push(...rhsList);
+      }
+      return grammar;
+    }
+
+    function findCommonPrefix(strings) {
+      if (!strings.length) return "";
+      let prefix = strings[0];
+      for (let i = 1; i < strings.length; i++) {
+        let j = 0;
+        while (j < prefix.length && j < strings[i].length && prefix[j] === strings[i][j]) j++;
+        prefix = prefix.substring(0, j);
+        if (!prefix) break;
+      }
+      return prefix;
+    }
+
+    function leftFactorOnce(grammar) {
+      const updatedGrammar = {};
+      let newRulesAdded = false;
+      let counter = 1;
+
+      for (const nonTerminal of Object.keys(grammar)) {
+        const productions = grammar[nonTerminal];
+        const grouped = {};
+        for (const prod of productions) {
+          const key = prod ? prod[0] : "";
+          (grouped[key] ||= []).push(prod);
+        }
+
+        for (const group of Object.values(grouped)) {
+          if (group.length === 1) {
+            (updatedGrammar[nonTerminal] ||= []).push(group[0]);
+            continue;
+          }
+
+          const prefix = findCommonPrefix(group);
+          if (prefix) {
+            let newNonTerminal = nonTerminal + "'";
+            while (grammar[newNonTerminal] || updatedGrammar[newNonTerminal]) {
+              newNonTerminal = nonTerminal + "'".repeat(++counter);
+            }
+            (updatedGrammar[nonTerminal] ||= []).push(prefix + newNonTerminal);
+            const suffixes = group.map(prod => {
+              const s = prod.substring(prefix.length);
+              return s === "" ? "ε" : s;
+            });
+            updatedGrammar[newNonTerminal] = (updatedGrammar[newNonTerminal] || []).concat(suffixes);
+            newRulesAdded = true;
+          } else {
+            (updatedGrammar[nonTerminal] ||= []).push(...group);
+          }
+        }
+      }
+      return [updatedGrammar, newRulesAdded];
+    }
+
+    function leftFactor(grammar) {
+      let current = grammar;
+      while (true) {
+        const [updated, changed] = leftFactorOnce(current);
+        current = updated;
+        if (!changed) break;
+      }
+      return current;
+    }
+
+    function printGrammar(grammar) {
+      let output = "";
+      for (const lhs in grammar) {
+        output += `${lhs} -> ${grammar[lhs].join(" | ")}\n`;
+      }
+      return output;
+    }
+
+    (function () {
+      const input = document.getElementById('grammarInput');
+      const output = document.getElementById('grammarOutput');
+      const btn = document.getElementById('processBtn');
+
+      function runProcessor() {
+        const src = input.value.trim();
+        if (!src) {
+          output.value = "Please enter a grammar.";
+          output.style.height = "auto";
+          output.style.height = output.scrollHeight + "px";
+          return;
+        }
+        const grammar = parseGrammarFromText(src);
+        const factored = leftFactor(grammar);
+        const result = "Grammar After Recursive Left Factoring:\n" + printGrammar(factored);
+        output.value = result;
+        output.style.height = "auto";
+        output.style.height = output.scrollHeight + "px";
+      }
+
+      btn.addEventListener('click', runProcessor);
+      input.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') runProcessor();
+      });
+    })();
+  </script>
+</body>
+</html>

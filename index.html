@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>codeX: The Journey of a Program</title>
+  <link rel="icon" href="assets/logo.png" type="image/x-icon">
+  <link rel="stylesheet" href="styles/project.css" />
+</head>
+<body>
+
+  <!-- Navbar -->
+  <header class="Demo_web">
+    <div class="container">
+      <div class="logo">
+        <a href="index.html">
+          <img src="assets/logo.png" alt="codeX Logo" />
+        </a>
+      </div>
+      <nav class="menu">
+        <ul>
+          <li>
+            <a href="index.html">
+              <img src="assets/icons/smart-home.png" alt="Home Icon" class="icon-img" />
+              Home
+            </a>
+          </li>
+          <li>
+            <a href="about.html">
+              <img src="assets/icons/about.png" alt="About Icon" class="icon-img" />
+              About
+            </a>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Shared Background Wrapper -->
+  <div class="home-bg">
+
+    <!-- Hero Section -->
+    <section class="compiler">
+      <h1>Decode Compiler Concepts Fast!</h1>
+      <p>
+        Don’t let grammar rules slow you down.<br />
+        codeX compiles your logic with precision and speed.
+      </p>
+      
+    </section>
+
+    <!-- Cards Section -->
+    <section class="card_part">
+      <h1>Compile Your Statements</h1>
+      <div class="d_flex">
+        <div class="card_item">
+          <div class="card_item_img">
+            <img src="assets/lr.png" alt="Left Recursion" />
+          </div>
+          <h4>Left Recursion Elimination</h4>
+          <p>
+            Removes left-recursive rules in grammar to prevent infinite loops in
+            top-down parsing.
+          </p>
+          <a href="recursion.html">Compile</a>
+        </div>
+
+        <div class="card_item">
+          <div class="card_item_img">
+            <img src="assets/LF.png" alt="Left Factoring" />
+          </div>
+          <h4>Left Factoring</h4>
+          <p>
+            Removes ambiguity by refactoring common prefixes in grammar
+            rules.
+          </p>
+          <a href="fact.html">Compile</a>
+        </div>
+
+        <div class="card_item">
+          <div class="card_item_img">
+            <img src="assets/first.png" alt="First Logo" />
+          </div>
+          <h4>First ( ) Follow ( )</h4>
+          <p>
+           FIRST(A): terminals that begin derivations from A; FOLLOW(A): terminals appearing right after A.
+          </p>
+          <a href="ff.html">Compile</a>
+        </div>
+
+        <div class="card_item">
+          <div class="card_item_img">
+            <img src="assets/lr0.png" alt="lr0 logo" />
+          </div>
+          <h4>LR ( 0 )</h4>
+          <p>
+            LR(0): bottom-up parser using LR items without lookahead to decide grammar reductions.
+          </p>
+          <a href="lr0.html">Compile</a>
+        </div>
+      </div>
+    </section>
+
+  </div> <!-- /.home-bg -->
+
+  <!-- Footer -->
+
+ 
+  <footer>
+    <div class="footer_container">
+      <p>|| © 2025 || codeX || All rights reserved ||</p>
+    </div>
+  </footer>
+
+</body>
+</html>

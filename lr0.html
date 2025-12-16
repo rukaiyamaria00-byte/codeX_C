@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>codeX: The Journey of a Program</title>
+  <link rel="icon" href="assets/logo.png" type="image/x-icon">
+  <link rel="stylesheet" href="styles/lr0.css" />
+</head>
+<body>
+
+  <!-- Navbar -->
+  <header class="Demo_web">
+    <div class="container">
+      <div class="logo">
+        <a href="index.html">
+          <img src="assets/logo.png" alt="codeX Logo" />
+        </a>
+      </div>
+      <nav class="menu">
+        <ul>
+          <li>
+            <a href="index.html">
+              <img src="assets/icons/smart-home.png" alt="Home Icon" class="icon-img" />
+              Home
+            </a>
+          </li>
+          <li>
+            <a href="about.html">
+              <img src="assets/icons/about.png" alt="About Icon" class="icon-img" />
+              About
+            </a>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Shared Background Wrapper -->
+  <div class="home-bg">
+
+    <!-- Hero Section -->
+    <section class="compiler">
+      <p>LR(0)</p>
+    </section>
+
+    <!-- Grammar Tool (Input / Process / Output) -->
+    <section id="grammar-tool" class="tool-wrap">
+      <div class="tool-container">
+
+        <!-- Input card -->
+        <div class="io-card">
+          <h2 class="io-title">Input</h2>
+          <textarea id="grammarInput" class="io-textarea"
+            placeholder="Enter your grammar here. Use 'ε' or '~' for epsilon..."
+            spellcheck="false" aria-label="Grammar input"></textarea>
+        </div>
+
+        <!-- Compile button centered BETWEEN cards (matches first page) -->
+        <button id="processBtn" class="btn-primary" type="button">Compile</button>
+
+        <!-- Output card -->
+        <div class="io-card">
+          <h2 class="io-title">Output</h2>
+          <textarea id="grammarOutput" class="io-textarea output" readonly
+            placeholder="Output will be displayed here…" aria-label="Output"></textarea>
+        </div>
+
+      </div>
+    </section>
+  </div> <!-- /home-bg -->
+   <!-- Cards Section -->
+    <section class="card_part">
+      <h1>Compile Your Statements</h1>
+      <div class="d_flex">
+        <div class="card_item">
+          <div class="card_item_img">
+            <img src="assets/lr.png" alt="Left Recursion" />
+          </div>
+          <h4>Left Recursion Elimination</h4>
+          <p>
+            Removes left-recursive rules in grammar to prevent infinite loops in
+            top-down parsing.
+          </p>
+          <a href="recursion.html">Compile</a>
+        </div>
+
+        <div class="card_item">
+          <div class="card_item_img">
+            <img src="assets/LF.png" alt="Left Factoring" />
+          </div>
+          <h4>Left Factoring</h4>
+          <p>
+            Removes ambiguity by refactoring common prefixes in grammar
+            rules.
+          </p>
+          <a href="fact.html">Compile</a>
+        </div>
+
+        <div class="card_item">
+          <div class="card_item_img">
+            <img src="assets/first.png" alt="First Logo" />
+          </div>
+          <h4>First ( ) Follow ( )</h4>
+          <p>
+           FIRST(A): terminals that begin derivations from A; FOLLOW(A): terminals appearing right after A.
+          </p>
+          <a href="ff.html">Compile</a>
+        </div>
+
+        
+    </section>
+
+  </div> <!-- /.home-bg -->
+
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer_container">
+      <p>|| © 2025 || codeX || All rights reserved ||</p>
+    </div>
+  </footer>
+
+  <!-- Minimal JS hook -->
+  <script>
+  (function () {
+    const input = document.getElementById('grammarInput');
+    const output = document.getElementById('grammarOutput');
+    const btn = document.getElementById('processBtn');
+
+    function ensureHtmlOutputContainer() {
+      let c = document.getElementById('grammarOutputHTML');
+      if (!c) {
+        c = document.createElement('div');
+        c.id = 'grammarOutputHTML';
+        c.style.marginTop = '12px';
+        c.style.fontFamily = 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace';
+        output.insertAdjacentElement('afterend', c);
+      }
+      return c;
+    }
+
+    /* ---- (All your LR(0) helpers exactly as you have them) ---- */
+    // ... keep your tokenizeSymbols, parseGrammarFromText, closure, gotoLR0,
+    // buildLR0States, getTerminalsAndNonTerminals, buildProductionList,
+    // buildParsingTable, makeItemSetsTable, makeParsingTableHTML here unchanged ...
+
+    /* PASTED FROM YOUR CODE (unchanged) */
+    function tokenizeSymbols(prod, nonTerminals) {
+      prod = prod.replace(/\s+/g, "");
+      const tokens = [];
+      let i = 0;
+      while (i < prod.length) {
+        const ch = prod[i];
+        if (ch === "ε" || ch === "~") { tokens.push("ε"); i++; }
+        else if (ch === "i" && prod[i + 1] === "d") { tokens.push("id"); i += 2; }
+        else if (/[A-Z]/.test(ch)) { tokens.push(ch); i++; }
+        else { tokens.push(ch); i++; }
+      }
+      return tokens;
+    }
+    function parseGrammarFromText(text) {
+      const grammar = {};
+      const order = [];
+      const lines = text.split("\n").map(l => l.trim()).filter(l => l);
+      for (const line of lines) {
+        if (line === "@") break;
+        const parts = line.split("->");
+        if (parts.length !== 2) continue;
+        const headRaw = parts[0].trim();
+        const prodsRaw = parts[1].trim();
+        if (!grammar[headRaw]) { grammar[headRaw] = []; order.push(headRaw); }
+        const prods = prodsRaw.split("|").map(p => p.trim());
+        grammar[headRaw].push(...prods);
+      }
+      return { grammar, order };
+    }
+    function buildProductionList(grammar, augmentedStart, order) {
+      const list = [[augmentedStart, grammar[augmentedStart][0]]];
+      for (const head of order) {
+        if (head === augmentedStart) continue;
+        for (const prod of grammar[head]) list.push([head, prod]);
+      }
+      return list;
+    }
+    function closure(items, grammar, nonTerminals) {
+      const closureSet = [...items];
+      const closureSetKeys = new Set(closureSet);
+      let i = 0;
+      while (i < closureSet.length) {
+        const item = closureSet[i];
+        const [head, body] = item.split("->");
+        const parts = body.split(".");
+        if (parts.length > 1 && parts[1]) {
+          const nextSymbol = tokenizeSymbols(parts[1], nonTerminals)[0];
+          if (nonTerminals.includes(nextSymbol)) {
+            for (const prod of grammar[nextSymbol]) {
+              const newItem = `${nextSymbol}->.${prod}`;
+              if (!closureSetKeys.has(newItem)) {
+                closureSet.push(newItem);
+                closureSetKeys.add(newItem);
+              }
+            }
+          }
+        }
+        i++;
+      }
+      return closureSet;
+    }
+    function gotoLR0(items, symbol, grammar, nonTerminals) {
+      const gotoItems = [];
+      for (const item of items) {
+        const [head, body] = item.split("->");
+        const parts = body.split(".");
+        if (parts.length > 1 && parts[1]) {
+          const tokens = tokenizeSymbols(parts[1], nonTerminals);
+          if (tokens[0] === symbol) {
+            const newBody = parts[0] + symbol + "." + parts[1].slice(symbol.length);
+            gotoItems.push(`${head}->${newBody}`);
+          }
+        }
+      }
+      return closure(gotoItems, grammar, nonTerminals);
+    }
+    function buildLR0States(grammar, order) {
+      const startSymbol = order[0];
+      const augmentedSymbol = startSymbol + "'";
+      const augmentedGrammar = { [augmentedSymbol]: [startSymbol], ...grammar };
+      const nonTerminals = Object.keys(augmentedGrammar);
+
+      const states = [];
+      const stateIds = new Map();
+
+      function getStateKey(items) { return items.slice().sort().join("|"); }
+
+      const startItem = closure([`${augmentedSymbol}->.${startSymbol}`], augmentedGrammar, nonTerminals);
+      const startKey = getStateKey(startItem);
+      states.push(startItem);
+      stateIds.set(startKey, 0);
+
+      const queue = [startItem];
+      while (queue.length > 0) {
+        const currentState = queue.shift();
+        const symbols = new Set();
+        for (const item of currentState) {
+          const body = item.split("->")[1];
+          const parts = body.split(".");
+          if (parts.length > 1 && parts[1]) {
+            const sym = tokenizeSymbols(parts[1], nonTerminals)[0];
+            if (sym) symbols.add(sym);
+          }
+        }
+        for (const symbol of symbols) {
+          const nextState = gotoLR0(currentState, symbol, augmentedGrammar, nonTerminals);
+          if (nextState.length === 0) continue;
+          const nextKey = nextState.slice().sort().join("|");
+          if (!stateIds.has(nextKey)) {
+            stateIds.set(nextKey, states.length);
+            states.push(nextState);
+            queue.push(nextState);
+          }
+        }
+      }
+      return { states, augmentedGrammar, augmentedSymbol, nonTerminals, order };
+    }
+    function getTerminalsAndNonTerminals(grammar) {
+      const nonTerminals = Object.keys(grammar);
+      const terminals = new Set();
+      for (const prods of Object.values(grammar)) {
+        for (const prod of prods) {
+          const tokens = tokenizeSymbols(prod, nonTerminals);
+          for (const t of tokens) {
+            if (!nonTerminals.includes(t) && t !== "ε") terminals.add(t);
+          }
+        }
+      }
+      terminals.add("$");
+      return { terminals: [...terminals], nonTerminals };
+    }
+    function buildParsingTable(states, grammar, augmentedStart, terminals, nonTerminals, prodList) {
+      const action = Array(states.length).fill().map(() => ({}));
+      const gotoTable = Array(states.length).fill().map(() => ({}));
+
+      for (let i = 0; i < states.length; i++) {
+        for (const item of states[i]) {
+          const [head, body] = item.split("->");
+          if (body.endsWith(".")) {
+            if (head === augmentedStart) {
+              action[i]["$"] = "acc";
+            } else {
+              const prod = body.slice(0, -1);
+              let prodIndex = prodList.findIndex(([h, p]) => h === head && p === prod);
+              if (prodIndex === -1) {
+                action[i]["$"] = `${head} -> ${prod}`;
+              } else {
+                for (const t of terminals) if (!action[i][t]) action[i][t] = `r${prodIndex}`;
+              }
+            }
+          } else {
+            const sym = tokenizeSymbols(body.split(".")[1], nonTerminals)[0];
+            const nextStateIndex = states.findIndex(s =>
+              JSON.stringify(s) === JSON.stringify(gotoLR0(states[i], sym, grammar, nonTerminals))
+            );
+            if (terminals.includes(sym)) action[i][sym] = `s${nextStateIndex}`;
+            else gotoTable[i][sym] = nextStateIndex;
+          }
+        }
+      }
+      return { action, gotoTable };
+    }
+    function makeItemSetsTable(states, prodList) {
+      let html = `<h3>LR(0) Item Sets</h3><table border="1" cellpadding="6" style="border-collapse:collapse; width:100%; max-width:100%">
+        <tr><th style="text-align:left">State</th><th style="text-align:left">Items</th></tr>`;
+      for (let i = 0; i < states.length; i++) {
+        let itemsHTML = "";
+        const sortedItems = [...states[i]].sort((a, b) => {
+          const ai = prodList.findIndex(([h, p]) => `${h}->${p}`.replace(/\s+/g, "") === a.replace(".", "").replace(/\s+/g, ""));
+          const bi = prodList.findIndex(([h, p]) => `${h}->${p}`.replace(/\s+/g, "") === b.replace(".", "").replace(/\s+/g, ""));
+          return ai - bi;
+        });
+        for (const item of sortedItems) itemsHTML += `${item}<br>`;
+        html += `<tr><td><strong>I${i}</strong></td><td>${itemsHTML}</td></tr>`;
+      }
+      html += "</table>";
+      return html;
+    }
+    function makeParsingTableHTML(action, gotoTable, terminals, nonTerminals, augmentedStart) {
+      let html = `<h3>Parsing Table</h3><table border="1" cellpadding="6" style="border-collapse:collapse; width:100%; max-width:100%">
+        <tr><th>State</th>`;
+      const filteredNT = nonTerminals.filter(nt => nt !== augmentedStart);
+      for (const t of terminals) html += `<th>${t}</th>`;
+      for (const nt of filteredNT) html += `<th>${nt}</th>`;
+      html += "</tr>";
+      for (let i = 0; i < action.length; i++) {
+        html += `<tr><td><strong>${i}</strong></td>`;
+        for (const t of terminals) html += `<td>${action[i][t] || ""}</td>`;
+        for (const nt of filteredNT) html += `<td>${gotoTable[i][nt] !== undefined ? gotoTable[i][nt] : ""}</td>`;
+        html += "</tr>";
+      }
+      html += "</table>";
+      return html;
+    }
+
+    function runProcessor() {
+      const src = input.value.trim();
+      const container = ensureHtmlOutputContainer();
+      if (!src) { container.innerHTML = "<p>Please enter a grammar.</p>"; return; }
+
+      const { grammar, order } = parseGrammarFromText(src);
+      if (!order.length) { container.innerHTML = "<p>Invalid or empty grammar.</p>"; return; }
+
+      const { states, augmentedGrammar, augmentedSymbol, nonTerminals } = buildLR0States(grammar, order);
+      const { terminals } = getTerminalsAndNonTerminals(augmentedGrammar);
+      const prodList = buildProductionList(augmentedGrammar, augmentedSymbol, order);
+      const { action, gotoTable } = buildParsingTable(states, augmentedGrammar, augmentedSymbol, terminals, nonTerminals, prodList);
+
+      container.innerHTML =
+        makeItemSetsTable(states, prodList) +
+        "<br>" +
+        makeParsingTableHTML(action, gotoTable, terminals, nonTerminals, augmentedSymbol);
+    }
+
+    btn.addEventListener('click', runProcessor);
+    input.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') runProcessor();
+    });
+  })();
+  </script>
+</body>
+</html>

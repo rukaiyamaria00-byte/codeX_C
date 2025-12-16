@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>codeX: The Journey of a Program</title>
+  <link rel="icon" href="assets/logo.png" type="image/x-icon">
+  <link rel="stylesheet" href="styles/ff.css" />
+</head>
+<body>
+
+  <!-- Navbar -->
+  <header class="Demo_web">
+    <div class="container">
+      <div class="logo">
+        <a href="index.html">
+          <img src="assets/logo.png" alt="codeX Logo" />
+        </a>
+      </div>
+      <nav class="menu">
+        <ul>
+          <li>
+            <a href="index.html">
+              <img src="assets/icons/smart-home.png" alt="Home Icon" class="icon-img" />
+              Home
+            </a>
+          </li>
+          <li>
+            <a href="about.html">
+              <img src="assets/icons/about.png" alt="About Icon" class="icon-img" />
+              About
+            </a>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Shared Background Wrapper -->
+  <div class="home-bg">
+
+    <!-- Hero Section -->
+    <section class="compiler">
+      <p>First ( ) Follow ( )</p>
+    </section>
+
+    <!-- Grammar Tool (Input / Process / Output) -->
+    <section id="grammar-tool" class="tool-wrap">
+      <div class="tool-container">
+
+        <!-- Input card -->
+        <div class="io-card">
+          <h2 class="io-title">Input</h2>
+          <textarea id="grammarInput" class="io-textarea"
+            placeholder="Enter your grammar here. Use 'ε' or '~' for epsilon..."
+            spellcheck="false" aria-label="Grammar input"></textarea>
+        </div>
+
+        <!-- Compile button centered BETWEEN cards (matches page-1) -->
+        <button id="processBtn" class="btn-primary" type="button">Compile</button>
+
+        <!-- Output card -->
+        <div class="io-card">
+          <h2 class="io-title">Output</h2>
+          <textarea id="grammarOutput" class="io-textarea output" readonly
+            placeholder="Output will be displayed here…" aria-label="Output"></textarea>
+        </div>
+
+      </div>
+    </section>
+  </div> <!-- CLOSE .home-bg -->
+ <!-- Cards Section -->
+    <section class="card_part">
+      
+      <div class="d_flex">
+        <div class="card_item">
+          <div class="card_item_img">
+            <img src="assets/lr.png" alt="Left Recursion" />
+          </div>
+          <h4>Left Recursion Elimination</h4>
+          <p>
+            Removes left-recursive rules in grammar to prevent infinite loops in
+            top-down parsing.
+          </p>
+          <a href="recursion.html">Compile</a>
+        </div>
+
+        <div class="card_item">
+          <div class="card_item_img">
+            <img src="assets/LF.png" alt="Left Factoring" />
+          </div>
+          <h4>Left Factoring</h4>
+          <p>
+            Removes ambiguity by refactoring common prefixes in grammar
+            rules.
+          </p>
+          <a href="fact.html">Compile</a>
+        </div>
+
+        
+
+        <div class="card_item">
+          <div class="card_item_img">
+            <img src="assets/lr0.png" alt="lr0 logo" />
+          </div>
+          <h4>LR ( 0 )</h4>
+          <p>
+            LR(0): bottom-up parser using LR items without lookahead to decide grammar reductions.
+          </p>
+          <a href="lr0.html">Compile</a>
+        </div>
+      </div>
+    </section>
+
+  </div> <!-- /.home-bg -->
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer_container">
+      <p>|| © 2025 || codeX || All rights reserved ||</p>
+    </div>
+  </footer>
+
+  <!-- FIRST/FOLLOW JS -->
+  <script>
+  (function () {
+    const EPSILON = "ε";
+
+    // --- Tokenizer ---
+    function tokenize(production) {
+      production = production.replace(/\s+/g, "");
+      const tokens = [];
+      let i = 0;
+      while (i < production.length) {
+        const ch = production[i];
+        if (ch === "ε" || ch === "~") { tokens.push(EPSILON); i++; }
+        else if (/[A-Z]/.test(ch)) { tokens.push(ch); i++; }
+        else if (ch === "i" && production[i + 1] === "d") { tokens.push("id"); i += 2; }
+        else if (/[a-z]/.test(ch)) { tokens.push(ch); i++; }
+        else { tokens.push(ch); i++; }
+      }
+      return tokens;
+    }
+
+    // --- Parse Grammar ---
+    function parseGrammar(inputText) {
+      const grammar = {};
+      const nonTerminalOrder = [];
+      const lines = inputText.split("\n").map(l => l.trim()).filter(l => l && l !== "@");
+      for (const line of lines) {
+        if (!line.includes("->")) continue;
+        const [lhsRaw, rhsRaw] = line.split("->");
+        const lhs = lhsRaw.trim();
+        const rhs = rhsRaw.trim();
+        if (!grammar[lhs]) { grammar[lhs] = []; nonTerminalOrder.push(lhs); }
+        const rhsAlternatives = rhs.split("|").map(s => s.trim());
+        for (const alt of rhsAlternatives) grammar[lhs].push(tokenize(alt));
+      }
+      return { grammar, order: nonTerminalOrder };
+    }
+
+    // --- Compute FIRST ---
+    function computeFirst(grammar, order) {
+      const first = {}; order.forEach(nt => first[nt] = []);
+      function addToFirst(nt, symbols) { symbols.forEach(sym => { if (!first[nt].includes(sym)) first[nt].push(sym); }); }
+      function firstOf(symbol) {
+        if (symbol === EPSILON) return [EPSILON];
+        if (!/[A-Z]/.test(symbol)) return [symbol];
+        if (first[symbol].length) return first[symbol];
+        for (const prod of (grammar[symbol] || [])) {
+          for (const sym of prod) {
+            const f = firstOf(sym);
+            addToFirst(symbol, f.filter(s => s !== EPSILON));
+            if (!f.includes(EPSILON)) break;
+          }
+          if (prod.every(sym => firstOf(sym).includes(EPSILON))) addToFirst(symbol, [EPSILON]);
+        }
+        return first[symbol];
+      }
+      order.forEach(nt => firstOf(nt));
+      return first;
+    }
+
+    // --- Compute FOLLOW ---
+    function computeFollow(grammar, first, order) {
+      const follow = {}; order.forEach(nt => follow[nt] = []);
+      if (!follow[order[0]].includes("$")) follow[order[0]].push("$");
+
+      function addToFollow(nt, symbols) { symbols.forEach(sym => { if (!follow[nt].includes(sym)) follow[nt].push(sym); }); }
+      function firstOfString(symbols) {
+        let res = [];
+        for (const sym of symbols) {
+          const f = first[sym] || (/[A-Z]/.test(sym) ? [] : [sym]);
+          res = [...res, ...f.filter(x => x !== EPSILON)];
+          if (!f.includes(EPSILON)) return res;
+        }
+        res.push(EPSILON);
+        return res;
+      }
+
+      let changed = true;
+      while (changed) {
+        changed = false;
+        for (const lhs of order) {
+          for (const prod of (grammar[lhs] || [])) {
+            for (let i = 0; i < prod.length; i++) {
+              const B = prod[i];
+              if (!/[A-Z]/.test(B)) continue;
+              const trailer = prod.slice(i + 1);
+              const firstTrailer = firstOfString(trailer);
+              const before = follow[B].length;
+              addToFollow(B, firstTrailer.filter(s => s !== EPSILON));
+              if (firstTrailer.includes(EPSILON) || trailer.length === 0) addToFollow(B, follow[lhs]);
+              if (follow[B].length !== before) changed = true;
+            }
+          }
+        }
+      }
+      return follow;
+    }
+
+    // --- UI Hook ---
+    const input = document.getElementById('grammarInput');
+    const output = document.getElementById('grammarOutput');
+    const btn = document.getElementById('processBtn');
+
+    function runProcessor() {
+      const src = input.value.trim();
+      if (!src) {
+        output.value = "Please enter a grammar.";
+        output.style.height = "auto";
+        output.style.height = output.scrollHeight + "px";
+        return;
+      }
+      const { grammar, order } = parseGrammar(src);
+      const first = computeFirst(grammar, order);
+      const follow = computeFollow(grammar, first, order);
+
+      let result = "\nFIRST sets:\n";
+      order.forEach(nt => { result += `${nt} : { ${first[nt].join(", ")} }\n`; });
+      result += "\nFOLLOW sets:\n";
+      order.forEach(nt => { result += `${nt} : { ${follow[nt].join(", ")} }\n`; });
+
+      output.value = result;
+      output.style.height = "auto";
+      output.style.height = output.scrollHeight + "px";
+    }
+
+    btn.addEventListener('click', runProcessor);
+    input.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') runProcessor();
+    });
+  })();
+  </script>
+</body>
+</html>
